@@ -8,7 +8,6 @@ import (
 func InitConfiguration() {
 	viper.AutomaticEnv()
 	
-	// Default fallbacks
 	viper.SetDefault("SERVER", "AWS")
 	viper.SetDefault("APPLICATION", "API")
 	viper.SetDefault("CLOUD", "AWS")
