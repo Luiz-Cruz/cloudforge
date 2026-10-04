@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -57,15 +58,15 @@ func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState
 func (r *dynamoRepository) UpdateStatus(ctx context.Context, transactionID, status string) error {
 	_, err := r.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(r.tableName),
-		Key: map[string]dynamodb.AttributeValue{
-			"transaction_id": &dynamodb.AttributeValueMemberS{Value: transactionID},
+		Key: map[string]types.AttributeValue{
+			"transaction_id": &types.AttributeValueMemberS{Value: transactionID},
 		},
 		UpdateExpression: aws.String("SET #s = :status"),
 		ExpressionAttributeNames: map[string]string{
 			"#s": "status",
 		},
-		ExpressionAttributeValues: map[string]dynamodb.AttributeValue{
-			":status": &dynamodb.AttributeValueMemberS{Value: status},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":status": &types.AttributeValueMemberS{Value: status},
 		},
 	})
 	if err != nil {
