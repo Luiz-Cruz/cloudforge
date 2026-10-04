@@ -38,7 +38,7 @@ func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQS
 		// Update state to PROCESSING
 		w.envRepo.UpdateStatus(ctx, state.TransactionID, "PROCESSING")
 
-		if err := w.executeSaga(ctx, state); err != nil {
+		if err := w.executeProvisioning(ctx, state); err != nil {
 			logrus.Errorf("Provisioning failed for %s. Rollback completed.", state.TransactionID)
 			w.envRepo.UpdateStatus(ctx, state.TransactionID, "FAILED")
 			// Return error so the message goes back to queue or DLQ
@@ -52,14 +52,14 @@ func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQS
 	return nil
 }
 
-type SagaStep struct {
+type ProvisioningStep struct {
 	Name     string
 	Execute  func(ctx context.Context, state environment.EnvironmentState) error
 	Rollback func(ctx context.Context, state environment.EnvironmentState) error
 }
 
-func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.EnvironmentState) error {
-	steps := []SagaStep{
+func (w *provisioningWorker) executeProvisioning(ctx context.Context, state environment.EnvironmentState) error {
+	steps := []ProvisioningStep{
 		{
 			Name: "Network",
 			Execute: func(ctx context.Context, state environment.EnvironmentState) error {
@@ -115,7 +115,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 		},
 	}
 
-	var successfulSteps []SagaStep
+	var successfulSteps []ProvisioningStep
 
 	for _, step := range steps {
 		err := step.Execute(ctx, state)
