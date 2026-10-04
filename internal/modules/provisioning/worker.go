@@ -3,7 +3,6 @@ package provisioning
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
 	"github.com/sirupsen/logrus"
