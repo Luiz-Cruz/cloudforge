@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/Luiz-Cruz/cloudforge/cmd"
+	"github.com/Luiz-Cruz/cloudforge/platform/config"
+)
 
 func main() {
-	fmt.Println("CloudForge - Simulation Platform Started")
+	config.InitConfiguration()
+	cmd.ProvideRunner().Run()
 }
