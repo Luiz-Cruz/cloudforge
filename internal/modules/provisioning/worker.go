@@ -91,10 +91,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 			Execute: func(ctx context.Context, state environment.EnvironmentState) error {
 				logrus.Infof("[Tx: %s] Provisioning Storage...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
-				// SIMULATING A RANDOM FAILURE HERE IF THE NAME CONTAINS "fail"
-				if state.Name == "fail" {
-					return errors.New("simulated storage failure")
-				}
+
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
