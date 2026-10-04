@@ -25,3 +25,7 @@ resource "aws_sqs_queue" "main_queue" {
     maxReceiveCount     = 3
   })
 }
+
+output "main_queue_arn" {
+  value = aws_sqs_queue.main_queue.arn
+}
