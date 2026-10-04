@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +15,10 @@ func provideFiberApplication() *fiber.App {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 	
+
+	environment.RegisterRoutes(app)
 	return app
+
 }
 
 func (FiberApplication) Run() {
