@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 )
 
 type Repository interface {
+	FindByID(ctx context.Context, id string) (*EnvironmentState, error)
+	FindAll(ctx context.Context) ([]*EnvironmentState, error)
 	SaveState(ctx context.Context, state EnvironmentState) error
 	UpdateStatus(ctx context.Context, transactionID, status string) error
 }
@@ -55,4 +57,42 @@ func (r *dynamoRepository) UpdateStatus(ctx context.Context, transactionID, stat
 		},
 	})
 	return err
+}
+
+func (r *dynamoRepository) FindByID(ctx context.Context, id string) (*EnvironmentState, error) {
+	out, err := r.client.GetItem(ctx, &dynamodb.GetItemInput{
+		TableName: &r.tableName,
+		Key: map[string]types.AttributeValue{
+			"transaction_id": &types.AttributeValueMemberS{Value: id},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if out.Item == nil || len(out.Item) == 0 {
+		return nil, nil // Not found
+	}
+
+	var state EnvironmentState
+	err = attributevalue.UnmarshalMap(out.Item, &state)
+	if err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func (r *dynamoRepository) FindAll(ctx context.Context) ([]*EnvironmentState, error) {
+	out, err := r.client.Scan(ctx, &dynamodb.ScanInput{
+		TableName: &r.tableName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var states []*EnvironmentState
+	err = attributevalue.UnmarshalListOfMaps(out.Items, &states)
+	if err != nil {
+		return nil, err
+	}
+	return states, nil
 }

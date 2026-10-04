@@ -3,15 +3,18 @@ package environment
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 //go:generate mockgen -source=service.go -destination=mocks/service_mock.go -package=mocks
 type Service interface {
+	GetEnvironment(ctx context.Context, id string) (*EnvironmentState, error)
+	ListEnvironments(ctx context.Context) ([]*EnvironmentState, error)
 	StartProvisioning(ctx context.Context, name, envType string) (EnvironmentState, error)
 }
 
@@ -54,4 +57,12 @@ func (s *environmentService) StartProvisioning(ctx context.Context, name, envTyp
 	}
 
 	return state, nil
+}
+
+func (s *environmentService) GetEnvironment(ctx context.Context, id string) (*EnvironmentState, error) {
+	return s.repo.FindByID(ctx, id)
+}
+
+func (s *environmentService) ListEnvironments(ctx context.Context) ([]*EnvironmentState, error) {
+	return s.repo.FindAll(ctx)
 }
