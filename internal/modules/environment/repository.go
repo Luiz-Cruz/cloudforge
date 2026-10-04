@@ -2,22 +2,13 @@ package environment
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/sirupsen/logrus"
-	"time"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 )
 
-type EnvironmentState struct {
-	TransactionID string    `dynamodbav:"transaction_id"`
-	Name          string    `dynamodbav:"name"`
-	Type          string    `dynamodbav:"type"`
-	Status        string    `dynamodbav:"status"`
-	CreatedAt     time.Time `dynamodbav:"created_at"`
-}
-
-//go:generate mockgen -source=repository.go -destination=mocks/repository_mock.go -package=mocks
 type Repository interface {
 	SaveState(ctx context.Context, state EnvironmentState) error
 	UpdateStatus(ctx context.Context, transactionID, status string) error
@@ -35,42 +26,33 @@ func NewRepository(client *dynamodb.Client, tableName string) Repository {
 	}
 }
 
-func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error
-	UpdateStatus(ctx context.Context, transactionID, status string) error {
+func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error {
 	item, err := attributevalue.MarshalMap(state)
 	if err != nil {
 		return err
 	}
 
 	_, err = r.client.PutItem(ctx, &dynamodb.PutItemInput{
-		TableName: aws.String(r.tableName),
+		TableName: &r.tableName,
 		Item:      item,
 	})
 
-	if err != nil {
-		logrus.Errorf("Failed to save state in DynamoDB: %v", err)
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (r *dynamoRepository) UpdateStatus(ctx context.Context, transactionID, status string) error {
 	_, err := r.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
-		TableName: aws.String(r.tableName),
-		Key: map[string]dynamodb.AttributeValue{
-			"transaction_id": &dynamodb.AttributeValueMemberS{Value: transactionID},
+		TableName: &r.tableName,
+		Key: map[string]types.AttributeValue{
+			"transaction_id": &types.AttributeValueMemberS{Value: transactionID},
 		},
 		UpdateExpression: aws.String("SET #s = :status"),
 		ExpressionAttributeNames: map[string]string{
 			"#s": "status",
 		},
-		ExpressionAttributeValues: map[string]dynamodb.AttributeValue{
-			":status": &dynamodb.AttributeValueMemberS{Value: status},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":status": &types.AttributeValueMemberS{Value: status},
 		},
 	})
-	if err != nil {
-		logrus.Errorf("Failed to update status %s for tx %s: %v", status, transactionID, err)
-	}
 	return err
 }
