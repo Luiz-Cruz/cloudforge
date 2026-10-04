@@ -1,7 +1,5 @@
 # cloudforge ☁️
 
-![Go](https://github.com/Luiz-Cruz/cloudforge/workflows/Go/badge.svg)
-![Deploy](https://github.com/Luiz-Cruz/cloudforge/workflows/Docker%20Image%20CI/badge.svg)
 
 An enterprise-grade cloud provisioning and orchestration platform.
 
