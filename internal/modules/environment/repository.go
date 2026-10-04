@@ -17,6 +17,7 @@ type EnvironmentState struct {
 	CreatedAt     time.Time `dynamodbav:"created_at"`
 }
 
+//go:generate mockgen -source=repository.go -destination=mocks/repository_mock.go -package=mocks
 type Repository interface {
 	SaveState(ctx context.Context, state EnvironmentState) error
 }

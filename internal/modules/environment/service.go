@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+//go:generate mockgen -source=service.go -destination=mocks/service_mock.go -package=mocks
 type Service interface {
 	StartProvisioning(ctx context.Context, name, envType string) (EnvironmentState, error)
 }
