@@ -3,11 +3,11 @@ package provisioning
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/sirupsen/logrus"
 )
 
 type Worker interface {
@@ -27,7 +27,7 @@ func NewWorker(repo environment.Repository) Worker {
 func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQSEvent) error {
 	for _, message := range sqsEvent.Records {
 		logrus.Infof("Processing SQS message ID: %s", message.MessageId)
-		
+
 		var state environment.EnvironmentState
 		if err := json.Unmarshal([]byte(message.Body), &state); err != nil {
 			logrus.Errorf("Failed to unmarshal SQS message body: %v", err)
@@ -49,12 +49,12 @@ func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQS
 
 func (w *provisioningWorker) simulateProvisioning(ctx context.Context, state environment.EnvironmentState) error {
 	steps := []string{"Network", "Database", "Storage", "Compute", "Secrets"}
-	
+
 	for _, step := range steps {
 		logrus.Infof("[Tx: %s] Provisioning %s...", state.TransactionID, step)
 		time.Sleep(500 * time.Millisecond) // Simulate work
-		
+
 	}
-	
+
 	return nil
 }
