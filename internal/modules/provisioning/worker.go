@@ -68,7 +68,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
-				logrus.Warnf("[Tx: %s] ⏪ Rolling back Network...", state.TransactionID)
+				logrus.Warnf("[Tx: %s] Rolling back Network...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
 				return nil
 			},
@@ -81,7 +81,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
-				logrus.Warnf("[Tx: %s] ⏪ Rolling back Database...", state.TransactionID)
+				logrus.Warnf("[Tx: %s] Rolling back Database...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
 				return nil
 			},
@@ -95,7 +95,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
-				logrus.Warnf("[Tx: %s] ⏪ Rolling back Storage...", state.TransactionID)
+				logrus.Warnf("[Tx: %s] Rolling back Storage...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
 				return nil
 			},
@@ -108,7 +108,7 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
-				logrus.Warnf("[Tx: %s] ⏪ Rolling back Compute...", state.TransactionID)
+				logrus.Warnf("[Tx: %s] Rolling back Compute...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
 				return nil
 			},
@@ -120,14 +120,14 @@ func (w *provisioningWorker) executeSaga(ctx context.Context, state environment.
 	for _, step := range steps {
 		err := step.Execute(ctx, state)
 		if err != nil {
-			logrus.Errorf("[Tx: %s] ❌ Error executing %s: %v", state.TransactionID, step.Name, err)
+			logrus.Errorf("[Tx: %s] Error executing %s: %v", state.TransactionID, step.Name, err)
 
 			// Execute Compensating Transactions (Rollback) in Reverse Order
 			for i := len(successfulSteps) - 1; i >= 0; i-- {
 				rbStep := successfulSteps[i]
 				rbErr := rbStep.Rollback(ctx, state)
 				if rbErr != nil {
-					logrus.Errorf("[Tx: %s] ❌ FATAL: Rollback failed for %s: %v", state.TransactionID, rbStep.Name, rbErr)
+					logrus.Errorf("[Tx: %s] FATAL: Rollback failed for %s: %v", state.TransactionID, rbStep.Name, rbErr)
 				}
 			}
 			return err
