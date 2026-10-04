@@ -16,11 +16,9 @@ func provideFiberApplication() *fiber.App {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 	
-	// Dependency Injection
 	dynamoClient := cdi.ProvideDynamoDB()
 	sqsClient := cdi.ProvideSQS()
 
-	// Hardcoded values for local dev, in prod read from viper/env
 	tableName := "cloudforge-saga-state-local"
 	queueUrl := "http://localhost:4566/000000000000/cloudforge-queue-local"
 

@@ -34,15 +34,12 @@ func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQS
 			continue
 		}
 
-		// SAGA Orchestration Steps
 		if err := w.simulateProvisioning(ctx, state); err != nil {
-			// SAGA Compensation (Rollback)
 			logrus.Errorf("Provisioning failed for %s. Executing Rollback.", state.TransactionID)
 			w.envRepo.UpdateStatus(ctx, state.TransactionID, "FAILED")
-			return err // Return error to trigger SQS DLQ retry if not reached maxReceiveCount
+			return err
 		}
 
-		// Success
 		logrus.Infof("Successfully provisioned environment %s", state.TransactionID)
 		w.envRepo.UpdateStatus(ctx, state.TransactionID, "AVAILABLE")
 	}
@@ -57,10 +54,6 @@ func (w *provisioningWorker) simulateProvisioning(ctx context.Context, state env
 		logrus.Infof("[Tx: %s] Provisioning %s...", state.TransactionID, step)
 		time.Sleep(500 * time.Millisecond) // Simulate work
 		
-		// Optional: Simulate a random failure here for DLQ demonstration
-		// if step == "Compute" && state.Type == "fail_test" {
-		// 	return fmt.Errorf("simulated failure during Compute provisioning")
-		// }
 	}
 	
 	return nil

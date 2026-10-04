@@ -30,7 +30,6 @@ func NewService(repo Repository, sqsCli *sqs.Client, queueUrl string) Service {
 }
 
 func (s *environmentService) StartProvisioning(ctx context.Context, name, envType string) (EnvironmentState, error) {
-	// 1. Create Initial State
 	state := EnvironmentState{
 		TransactionID: uuid.New().String(),
 		Name:          name,
@@ -39,12 +38,10 @@ func (s *environmentService) StartProvisioning(ctx context.Context, name, envTyp
 		CreatedAt:     time.Now().UTC(),
 	}
 
-	// 2. Persist to DynamoDB (Idempotency and Tracing)
 	if err := s.repo.SaveState(ctx, state); err != nil {
 		return EnvironmentState{}, err
 	}
 
-	// 3. Publish to SQS to start the SAGA Orchestration asynchronously
 	messageBody, _ := json.Marshal(state)
 	_, err := s.sqsCli.SendMessage(ctx, &sqs.SendMessageInput{
 		QueueUrl:    aws.String(s.queueUrl),
@@ -53,7 +50,6 @@ func (s *environmentService) StartProvisioning(ctx context.Context, name, envTyp
 
 	if err != nil {
 		logrus.Errorf("Failed to send SQS message: %v", err)
-		// Usually we'd handle failures to send to queue with a fallback or DLQ mechanism
 		return EnvironmentState{}, err
 	}
 

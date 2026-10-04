@@ -13,14 +13,12 @@ import (
 type JobApplication struct{}
 
 func (JobApplication) Run() {
-	// Dependency Injection for the Worker
 	dynamoClient := cdi.ProvideDynamoDB()
-	tableName := "cloudforge-saga-state-local" // Read from env in prod
+	tableName := "cloudforge-saga-state-local"
 	
 	repo := environment.NewRepository(dynamoClient, tableName)
 	worker := provisioning.NewWorker(repo)
 
-	// Start Lambda handler listening to SQS
 	lambda.Start(func(ctx context.Context, sqsEvent events.SQSEvent) error {
 		logrus.Infof("Job woke up with %d SQS records", len(sqsEvent.Records))
 		return worker.ProcessSQS(ctx, sqsEvent)
