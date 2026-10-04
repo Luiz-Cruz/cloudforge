@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/Luiz-Cruz/cloudforge/platform/cdi"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
@@ -15,10 +16,21 @@ func provideFiberApplication() *fiber.App {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 	
+	// Dependency Injection
+	dynamoClient := cdi.ProvideDynamoDB()
+	sqsClient := cdi.ProvideSQS()
 
-	environment.RegisterRoutes(app)
+	// Hardcoded values for local dev, in prod read from viper/env
+	tableName := "cloudforge-saga-state-local"
+	queueUrl := "http://localhost:4566/000000000000/cloudforge-queue-local"
+
+	repo := environment.NewRepository(dynamoClient, tableName)
+	svc := environment.NewService(repo, sqsClient, queueUrl)
+	handler := environment.NewHandler(svc)
+	
+	environment.RegisterRoutes(app, handler)
+
 	return app
-
 }
 
 func (FiberApplication) Run() {
