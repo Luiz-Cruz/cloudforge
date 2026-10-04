@@ -35,8 +35,7 @@ func NewRepository(client *dynamodb.Client, tableName string) Repository {
 	}
 }
 
-func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error
-	UpdateStatus(ctx context.Context, transactionID, status string) error {
+func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error {
 	item, err := attributevalue.MarshalMap(state)
 	if err != nil {
 		return err
