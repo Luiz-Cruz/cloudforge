@@ -2,13 +2,16 @@ package cdi
 
 import (
 	"context"
+
+	"github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper"
+	appConfig "github.com/Luiz-Cruz/cloudforge/platform/config"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
-	appConfig "github.com/Luiz-Cruz/cloudforge/platform/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 )
 
 func LoadAWSConfig() aws.Config {
@@ -19,7 +22,7 @@ func LoadAWSConfig() aws.Config {
 	return cfg
 }
 
-func ProvideDynamoDB() *dynamodb.Client {
+func provideDynamoDB() *dynamodb.Client {
 	cfg := LoadAWSConfig()
 	if appConfig.IsLocalStack() {
 		return dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
@@ -29,7 +32,7 @@ func ProvideDynamoDB() *dynamodb.Client {
 	return dynamodb.NewFromConfig(cfg)
 }
 
-func ProvideSQS() *sqs.Client {
+func provideSQS() wrapper.SQSAPI {
 	cfg := LoadAWSConfig()
 	if appConfig.IsLocalStack() {
 		return sqs.NewFromConfig(cfg, func(o *sqs.Options) {
@@ -39,7 +42,7 @@ func ProvideSQS() *sqs.Client {
 	return sqs.NewFromConfig(cfg)
 }
 
-func ProvideSNS() *sns.Client {
+func provideSNS() *sns.Client {
 	cfg := LoadAWSConfig()
 	if appConfig.IsLocalStack() {
 		return sns.NewFromConfig(cfg, func(o *sns.Options) {
@@ -49,7 +52,7 @@ func ProvideSNS() *sns.Client {
 	return sns.NewFromConfig(cfg)
 }
 
-func ProvideS3() *s3.Client {
+func provideS3() *s3.Client {
 	cfg := LoadAWSConfig()
 	if appConfig.IsLocalStack() {
 		return s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -58,3 +61,17 @@ func ProvideS3() *s3.Client {
 	}
 	return s3.NewFromConfig(cfg)
 }
+
+func provideSES() wrapper.SESAPI {
+	if appConfig.IsLocalStack() {
+		return wrapper.NewMockSESAPI()
+	}
+	cfg := LoadAWSConfig()
+	return sesv2.NewFromConfig(cfg)
+}
+
+func ProvideDynamoDB() *dynamodb.Client { return provideDynamoDB() }
+func ProvideSQS() wrapper.SQSAPI        { return provideSQS() }
+func ProvideSNS() *sns.Client           { return provideSNS() }
+func ProvideS3() *s3.Client             { return provideS3() }
+func ProvideSES() wrapper.SESAPI        { return provideSES() }

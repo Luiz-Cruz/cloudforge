@@ -3,7 +3,6 @@ package provisioning
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
@@ -15,51 +14,19 @@ type Worker interface {
 	ProcessSQS(ctx context.Context, sqsEvent events.SQSEvent) error
 }
 
-type provisioningWorker struct {
-	envRepo environment.Repository
-}
-
-func NewWorker(repo environment.Repository) Worker {
-	return &provisioningWorker{
-		envRepo: repo,
-	}
-}
-
-func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQSEvent) error {
-	for _, message := range sqsEvent.Records {
-		logrus.Infof("Processing SQS message ID: %s", message.MessageId)
-
-		var state environment.EnvironmentState
-		if err := json.Unmarshal([]byte(message.Body), &state); err != nil {
-			logrus.Errorf("Failed to unmarshal SQS message body: %v", err)
-			continue
-		}
-
-		// Update state to PROCESSING
-		w.envRepo.UpdateStatus(ctx, state.TransactionID, "PROCESSING")
-
-		if err := w.executeProvisioning(ctx, state); err != nil {
-			logrus.Errorf("Provisioning failed for %s. Rollback completed.", state.TransactionID)
-			w.envRepo.UpdateStatus(ctx, state.TransactionID, "FAILED")
-			// Return error so the message goes back to queue or DLQ
-			return err
-		}
-
-		logrus.Infof("Successfully provisioned environment %s", state.TransactionID)
-		w.envRepo.UpdateStatus(ctx, state.TransactionID, "AVAILABLE")
-	}
-
-	return nil
-}
-
 type ProvisioningStep struct {
 	Name     string
 	Execute  func(ctx context.Context, state environment.EnvironmentState) error
 	Rollback func(ctx context.Context, state environment.EnvironmentState) error
 }
 
-func (w *provisioningWorker) executeProvisioning(ctx context.Context, state environment.EnvironmentState) error {
-	steps := []ProvisioningStep{
+type provisioningWorker struct {
+	envRepo environment.Repository
+	steps   []ProvisioningStep
+}
+
+func DefaultSteps() []ProvisioningStep {
+	return []ProvisioningStep{
 		{
 			Name: "Network",
 			Execute: func(ctx context.Context, state environment.EnvironmentState) error {
@@ -91,7 +58,6 @@ func (w *provisioningWorker) executeProvisioning(ctx context.Context, state envi
 			Execute: func(ctx context.Context, state environment.EnvironmentState) error {
 				logrus.Infof("[Tx: %s] Provisioning Storage...", state.TransactionID)
 				time.Sleep(200 * time.Millisecond)
-
 				return nil
 			},
 			Rollback: func(ctx context.Context, state environment.EnvironmentState) error {
@@ -114,10 +80,49 @@ func (w *provisioningWorker) executeProvisioning(ctx context.Context, state envi
 			},
 		},
 	}
+}
 
+func NewWorker(repo environment.Repository) Worker {
+	return NewWorkerWithSteps(repo, DefaultSteps())
+}
+
+func NewWorkerWithSteps(repo environment.Repository, steps []ProvisioningStep) Worker {
+	return &provisioningWorker{
+		envRepo: repo,
+		steps:   steps,
+	}
+}
+
+func (w *provisioningWorker) ProcessSQS(ctx context.Context, sqsEvent events.SQSEvent) error {
+	for _, message := range sqsEvent.Records {
+		logrus.Infof("Processing SQS message ID: %s", message.MessageId)
+
+		var state environment.EnvironmentState
+		if err := json.Unmarshal([]byte(message.Body), &state); err != nil {
+			logrus.Errorf("Failed to unmarshal SQS message body: %v", err)
+			continue
+		}
+
+		// Update state to PROCESSING
+		w.envRepo.UpdateStatus(ctx, state.TransactionID, "PROCESSING")
+
+		if err := w.executeProvisioning(ctx, state); err != nil {
+			logrus.Errorf("Provisioning failed for %s. Rollback completed.", state.TransactionID)
+			w.envRepo.UpdateStatus(ctx, state.TransactionID, "FAILED")
+			return err
+		}
+
+		logrus.Infof("Successfully provisioned environment %s", state.TransactionID)
+		w.envRepo.UpdateStatus(ctx, state.TransactionID, "AVAILABLE")
+	}
+
+	return nil
+}
+
+func (w *provisioningWorker) executeProvisioning(ctx context.Context, state environment.EnvironmentState) error {
 	var successfulSteps []ProvisioningStep
 
-	for _, step := range steps {
+	for _, step := range w.steps {
 		err := step.Execute(ctx, state)
 		if err != nil {
 			logrus.Errorf("[Tx: %s] Error executing %s: %v", state.TransactionID, step.Name, err)

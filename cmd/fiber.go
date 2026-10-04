@@ -11,21 +11,12 @@ type FiberApplication struct{}
 
 func provideFiberApplication() *fiber.App {
 	app := fiber.New()
-	
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
-	
-	dynamoClient := cdi.ProvideDynamoDB()
-	sqsClient := cdi.ProvideSQS()
 
-	tableName := "cloudforge-saga-state-local"
-	queueUrl := "http://localhost:4566/000000000000/cloudforge-queue-local"
-
-	repo := environment.NewRepository(dynamoClient, tableName)
-	svc := environment.NewService(repo, sqsClient, queueUrl)
-	handler := environment.NewHandler(svc)
-	
+	handler := cdi.ProvideEnvironmentHandler()
 	environment.RegisterRoutes(app, handler)
 
 	return app

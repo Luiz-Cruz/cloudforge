@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
-//go:generate mockgen -source=service.go -destination=mocks/service_mock.go -package=mocks
 type Service interface {
 	GetEnvironment(ctx context.Context, id string) (*EnvironmentState, error)
 	ListEnvironments(ctx context.Context) ([]*EnvironmentState, error)
@@ -20,11 +20,11 @@ type Service interface {
 
 type environmentService struct {
 	repo     Repository
-	sqsCli   *sqs.Client
+	sqsCli   wrapper.SQSAPI
 	queueUrl string
 }
 
-func NewService(repo Repository, sqsCli *sqs.Client, queueUrl string) Service {
+func NewService(repo Repository, sqsCli wrapper.SQSAPI, queueUrl string) Service {
 	return &environmentService{
 		repo:     repo,
 		sqsCli:   sqsCli,

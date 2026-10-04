@@ -3,6 +3,7 @@ package environment
 import (
 	"context"
 
+	"github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -17,11 +18,11 @@ type Repository interface {
 }
 
 type dynamoRepository struct {
-	client    *dynamodb.Client
+	client    wrapper.DynamoDBAPI
 	tableName string
 }
 
-func NewRepository(client *dynamodb.Client, tableName string) Repository {
+func NewRepository(client wrapper.DynamoDBAPI, tableName string) Repository {
 	return &dynamoRepository{
 		client:    client,
 		tableName: tableName,
@@ -70,7 +71,7 @@ func (r *dynamoRepository) FindByID(ctx context.Context, id string) (*Environmen
 		return nil, err
 	}
 	if out.Item == nil || len(out.Item) == 0 {
-		return nil, nil // Not found
+		return nil, nil
 	}
 
 	var state EnvironmentState
