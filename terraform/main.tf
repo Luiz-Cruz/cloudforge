@@ -34,3 +34,15 @@ module "storage" {
   source = "./storage"
   environment = var.environment
 }
+
+module "security" {
+  source      = "./security"
+  environment = var.environment
+}
+
+module "application" {
+  source               = "./application"
+  environment          = var.environment
+  lambda_exec_role_arn = module.security.lambda_exec_role_arn
+  sqs_main_queue_arn   = module.storage.main_queue_arn
+}
