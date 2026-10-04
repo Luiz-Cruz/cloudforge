@@ -2,20 +2,27 @@ package cmd
 
 import (
 	"context"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/sirupsen/logrus"
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/provisioning"
+	"github.com/Luiz-Cruz/cloudforge/platform/cdi"
 )
 
 type JobApplication struct{}
 
-type JobEvent struct {
-	Name string `json:"name"`
-}
-
 func (JobApplication) Run() {
-	lambda.Start(func(ctx context.Context, event JobEvent) error {
-		logrus.Infof("Received EventBridge Job execution: %v", event)
-		// TODO: Implement job routing based on event.Name
-		return nil
+	// Dependency Injection for the Worker
+	dynamoClient := cdi.ProvideDynamoDB()
+	tableName := "cloudforge-saga-state-local" // Read from env in prod
+	
+	repo := environment.NewRepository(dynamoClient, tableName)
+	worker := provisioning.NewWorker(repo)
+
+	// Start Lambda handler listening to SQS
+	lambda.Start(func(ctx context.Context, sqsEvent events.SQSEvent) error {
+		logrus.Infof("Job woke up with %d SQS records", len(sqsEvent.Records))
+		return worker.ProcessSQS(ctx, sqsEvent)
 	})
 }

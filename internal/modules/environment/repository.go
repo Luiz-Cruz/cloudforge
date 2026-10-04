@@ -20,6 +20,7 @@ type EnvironmentState struct {
 //go:generate mockgen -source=repository.go -destination=mocks/repository_mock.go -package=mocks
 type Repository interface {
 	SaveState(ctx context.Context, state EnvironmentState) error
+	UpdateStatus(ctx context.Context, transactionID, status string) error
 }
 
 type dynamoRepository struct {
@@ -34,7 +35,8 @@ func NewRepository(client *dynamodb.Client, tableName string) Repository {
 	}
 }
 
-func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error {
+func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState) error
+	UpdateStatus(ctx context.Context, transactionID, status string) error {
 	item, err := attributevalue.MarshalMap(state)
 	if err != nil {
 		return err
@@ -51,4 +53,24 @@ func (r *dynamoRepository) SaveState(ctx context.Context, state EnvironmentState
 	}
 
 	return nil
+}
+
+func (r *dynamoRepository) UpdateStatus(ctx context.Context, transactionID, status string) error {
+	_, err := r.client.UpdateItem(ctx, &dynamodb.UpdateItemInput{
+		TableName: aws.String(r.tableName),
+		Key: map[string]dynamodb.AttributeValue{
+			"transaction_id": &dynamodb.AttributeValueMemberS{Value: transactionID},
+		},
+		UpdateExpression: aws.String("SET #s = :status"),
+		ExpressionAttributeNames: map[string]string{
+			"#s": "status",
+		},
+		ExpressionAttributeValues: map[string]dynamodb.AttributeValue{
+			":status": &dynamodb.AttributeValueMemberS{Value: status},
+		},
+	})
+	if err != nil {
+		logrus.Errorf("Failed to update status %s for tx %s: %v", status, transactionID, err)
+	}
+	return err
 }
