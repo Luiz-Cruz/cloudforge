@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "localstack_cloudforge"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"
+    environment:
+      - SERVICES=dynamodb,s3,sts,sqs,sns,events
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "./volume:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    privileged: true
