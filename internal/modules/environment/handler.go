@@ -23,6 +23,15 @@ func RegisterRoutes(router fiber.Router, handler *Handler) {
 	group.Post("/", handler.CreateEnvironment)
 }
 
+
+// swagger:route POST /environments Environments createEnvironment
+// 
+// Start provisioning a new cloud environment
+// 
+// Asynchronously triggers a SAGA workflow to provision network, database, storage, compute, and secrets.
+// 
+// Responses:
+// 202: environmentResponse
 func (h *Handler) CreateEnvironment(c *fiber.Ctx) error {
 	var req EnvironmentRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -39,4 +48,20 @@ func (h *Handler) CreateEnvironment(c *fiber.Ctx) error {
 		"id":      state.TransactionID,
 		"status":  state.Status,
 	})
+}
+
+// swagger:parameters createEnvironment
+type environmentRequestWrapper struct {
+	// in:body
+	Body EnvironmentRequest
+}
+
+// swagger:response environmentResponse
+type environmentResponseWrapper struct {
+	// in:body
+	Body struct {
+		Message string `json:"message"`
+		ID      string `json:"id"`
+		Status  string `json:"status"`
+	}
 }
