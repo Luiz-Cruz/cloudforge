@@ -54,3 +54,17 @@ func (mr *MockRepositoryMockRecorder) SaveState(ctx, state any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveState", reflect.TypeOf((*MockRepository)(nil).SaveState), ctx, state)
 }
+
+// UpdateStatus mocks base method.
+func (m *MockRepository) UpdateStatus(ctx context.Context, transactionID, status string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatus", ctx, transactionID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatus indicates an expected call of UpdateStatus.
+func (mr *MockRepositoryMockRecorder) UpdateStatus(ctx, transactionID, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatus", reflect.TypeOf((*MockRepository)(nil).UpdateStatus), ctx, transactionID, status)
+}
