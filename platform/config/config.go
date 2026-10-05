@@ -8,9 +8,22 @@ import (
 func InitConfiguration() {
 	viper.AutomaticEnv()
 
-	viper.SetDefault("SERVER", "AWS")
+	server := viper.GetString("SERVER")
+	cloud := viper.GetString("CLOUD")
+
+	if server == "" && cloud == "LOCAL" {
+		viper.Set("SERVER", "LOCAL")
+	} else if server == "" {
+		viper.SetDefault("SERVER", "AWS")
+	}
+
+	if cloud == "" && viper.GetString("SERVER") == "LOCAL" {
+		viper.Set("CLOUD", "LOCAL")
+	} else if cloud == "" {
+		viper.SetDefault("CLOUD", "AWS")
+	}
+
 	viper.SetDefault("APPLICATION", "API")
-	viper.SetDefault("CLOUD", "AWS")
 
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.Info("Configuration Initialized")
