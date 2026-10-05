@@ -75,3 +75,12 @@ func ProvideSQS() wrapper.SQSAPI        { return provideSQS() }
 func ProvideSNS() *sns.Client           { return provideSNS() }
 func ProvideS3() *s3.Client             { return provideS3() }
 func ProvideSES() wrapper.SESAPI        { return provideSES() }
+
+func provideTracer() wrapper.Tracer {
+	if appConfig.IsLocalStack() {
+		return wrapper.NewNoopTracer()
+	}
+	return wrapper.NewXRayTracer()
+}
+
+func ProvideTracer() wrapper.Tracer { return provideTracer() }
