@@ -2,14 +2,14 @@ name: Go
 
 on:
   push:
-    branches: [ "main", "feature/*" ]
+    branches: [ "main", "develop", "feature/*", "release/*" ]
     paths:
       - "**.go"
       - "go.mod"
       - "go.sum"
       - ".github/**"
   pull_request:
-    branches: [ "main", "feature/*" ]
+    branches: [ "main", "develop", "feature/*", "release/*" ]
     paths:
       - "**.go"
       - "go.mod"
