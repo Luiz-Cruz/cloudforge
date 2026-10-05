@@ -2,6 +2,7 @@ package cdi
 
 import (
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/jobs"
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/provisioning"
 	"github.com/Luiz-Cruz/cloudforge/internal/services/email"
 	"github.com/Luiz-Cruz/cloudforge/internal/services/notification"
@@ -17,6 +18,7 @@ var provisioningWorker provisioning.Worker
 var storageService storage.Service
 var notificationService notification.Service
 var emailService email.Service
+var jobsFactory *jobs.Factory
 
 func ProvideEnvironmentHandler() *environment.Handler {
 	return environment.NewHandler(ProvideEnvironmentService())
@@ -97,4 +99,15 @@ func ProvideProvisioningWorker() provisioning.Worker {
 		)
 	}
 	return provisioningWorker
+}
+
+func ProvideJobsFactory() *jobs.Factory {
+	if jobsFactory == nil {
+		jobsFactory = jobs.NewFactory(
+			provideEnvironmentRepository(),
+			ProvideStorageService(),
+			ProvideNotificationService(),
+		)
+	}
+	return jobsFactory
 }
