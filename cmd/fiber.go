@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/Luiz-Cruz/cloudforge/platform/cdi"
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 )
@@ -9,11 +11,14 @@ type FiberApplication struct{}
 
 func provideFiberApplication() *fiber.App {
 	app := fiber.New()
-	
+
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
-	
+
+	handler := cdi.ProvideEnvironmentHandler()
+	environment.RegisterRoutes(app, handler)
+
 	return app
 }
 

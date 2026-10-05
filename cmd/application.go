@@ -16,5 +16,8 @@ func ProvideRunner() Application {
 		}
 		return LambdaApplication{}
 	}
+	if viper.GetString("APPLICATION") == "JOB" {
+		return LocalJobApplication{}
+	}
 	return FiberApplication{}
 }
