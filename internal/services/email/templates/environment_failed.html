@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Environment Provisioning Failed</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2>Environment Provisioning Failed</h2>
+    <p>Transaction ID: <strong>{{.TransactionID}}</strong></p>
+    <p>Environment Name: <strong>{{.EnvironmentName}}</strong></p>
+    <p>Status: <span style="color: red; font-weight: bold;">FAILED</span></p>
+    <p>Error details: {{.Error}}</p>
+</body>
+</html>

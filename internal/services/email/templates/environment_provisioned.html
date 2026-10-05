@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Environment Provisioned</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h2>Environment Successfully Provisioned</h2>
+    <p>Transaction ID: <strong>{{.TransactionID}}</strong></p>
+    <p>Environment Name: <strong>{{.EnvironmentName}}</strong></p>
+    <p>Status: <span style="color: green; font-weight: bold;">AVAILABLE</span></p>
+    {{if .ManifestURL}}
+    <p>Artifact Manifest: <a href="{{.ManifestURL}}">Download Manifest</a></p>
+    {{end}}
+</body>
+</html>
