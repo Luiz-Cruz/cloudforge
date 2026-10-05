@@ -7,12 +7,14 @@ on:
       - "**.go"
       - "go.mod"
       - "go.sum"
+      - ".github/**"
   pull_request:
     branches: [ "main", "feature/*" ]
     paths:
       - "**.go"
       - "go.mod"
       - "go.sum"
+      - ".github/**"
 
 jobs:
   build-and-test:
