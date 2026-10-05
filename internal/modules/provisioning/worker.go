@@ -3,9 +3,11 @@ package provisioning
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
+	"github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/sirupsen/logrus"
 )
@@ -23,6 +25,7 @@ type ProvisioningStep struct {
 type provisioningWorker struct {
 	envRepo environment.Repository
 	steps   []ProvisioningStep
+	tracer  wrapper.Tracer
 }
 
 func DefaultSteps() []ProvisioningStep {
@@ -82,14 +85,18 @@ func DefaultSteps() []ProvisioningStep {
 	}
 }
 
-func NewWorker(repo environment.Repository) Worker {
-	return NewWorkerWithSteps(repo, DefaultSteps())
+func NewWorker(repo environment.Repository, tracer wrapper.Tracer) Worker {
+	return NewWorkerWithSteps(repo, DefaultSteps(), tracer)
 }
 
-func NewWorkerWithSteps(repo environment.Repository, steps []ProvisioningStep) Worker {
+func NewWorkerWithSteps(repo environment.Repository, steps []ProvisioningStep, tracer wrapper.Tracer) Worker {
+	if tracer == nil {
+		tracer = wrapper.NewNoopTracer()
+	}
 	return &provisioningWorker{
 		envRepo: repo,
 		steps:   steps,
+		tracer:  tracer,
 	}
 }
 
@@ -123,17 +130,25 @@ func (w *provisioningWorker) executeProvisioning(ctx context.Context, state envi
 	var successfulSteps []ProvisioningStep
 
 	for _, step := range w.steps {
-		err := step.Execute(ctx, state)
-		if err != nil {
-			logrus.Errorf("[Tx: %s] Error executing %s: %v", state.TransactionID, step.Name, err)
+		stepName := step.Name
+		err := w.tracer.Capture(ctx, fmt.Sprintf("ProvisioningStep:%s", stepName), func(stepCtx context.Context) error {
+			return step.Execute(stepCtx, state)
+		})
 
-			// Execute Compensating Transactions (Rollback) in Reverse Order
+		if err != nil {
+			logrus.Errorf("[Tx: %s] Error executing %s: %v", state.TransactionID, stepName, err)
+
+			// Execute Compensating Transactions (Rollback) in Reverse Order with subsegment tracing
 			for i := len(successfulSteps) - 1; i >= 0; i-- {
 				rbStep := successfulSteps[i]
-				rbErr := rbStep.Rollback(ctx, state)
-				if rbErr != nil {
-					logrus.Errorf("[Tx: %s] FATAL: Rollback failed for %s: %v", state.TransactionID, rbStep.Name, rbErr)
-				}
+				rbName := rbStep.Name
+				_ = w.tracer.Capture(ctx, fmt.Sprintf("RollbackStep:%s", rbName), func(rbCtx context.Context) error {
+					rbErr := rbStep.Rollback(rbCtx, state)
+					if rbErr != nil {
+						logrus.Errorf("[Tx: %s] FATAL: Rollback failed for %s: %v", state.TransactionID, rbName, rbErr)
+					}
+					return rbErr
+				})
 			}
 			return err
 		}
