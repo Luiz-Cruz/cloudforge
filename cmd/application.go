@@ -10,14 +10,24 @@ type Application interface {
 }
 
 func ProvideRunner() Application {
+	appType := viper.GetString("APPLICATION")
 	if config.IsAWS() {
-		if viper.GetString("APPLICATION") == "JOB" {
+		switch appType {
+		case "JOB":
 			return JobApplication{}
+		case "CRON":
+			return CronApplication{}
+		default:
+			return LambdaApplication{}
 		}
-		return LambdaApplication{}
 	}
-	if viper.GetString("APPLICATION") == "JOB" {
+
+	switch appType {
+	case "JOB":
 		return LocalJobApplication{}
+	case "CRON":
+		return LocalCronApplication{}
+	default:
+		return FiberApplication{}
 	}
-	return FiberApplication{}
 }

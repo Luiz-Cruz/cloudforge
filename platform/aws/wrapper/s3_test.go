@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	mock_wrapper "github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper/mock"
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	mock_wrapper "github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper/mock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
