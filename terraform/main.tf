@@ -18,19 +18,19 @@ provider "aws" {
   dynamic "endpoints" {
     for_each = var.is_local ? [1] : []
     content {
-      dynamodb       = "http://localhost:4566"
-      s3             = "http://localhost:4566"
-      sns            = "http://localhost:4566"
-      sqs            = "http://localhost:4566"
-      eventbridge    = "http://localhost:4566"
-      apigateway     = "http://localhost:4566"
-      lambda         = "http://localhost:4566"
-      stepfunctions  = "http://localhost:4566"
+      dynamodb      = "http://localhost:4566"
+      s3            = "http://localhost:4566"
+      sns           = "http://localhost:4566"
+      sqs           = "http://localhost:4566"
+      eventbridge   = "http://localhost:4566"
+      apigateway    = "http://localhost:4566"
+      lambda        = "http://localhost:4566"
+      stepfunctions = "http://localhost:4566"
     }
   }
 }
 
 module "storage" {
-  source = "./storage"
+  source      = "./storage"
   environment = var.environment
 }

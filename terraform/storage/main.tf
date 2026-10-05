@@ -2,9 +2,9 @@ variable "environment" {}
 
 # DynamoDB Table to store the SAGA State
 resource "aws_dynamodb_table" "saga_state" {
-  name           = "cloudforge-saga-state-${var.environment}"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "transaction_id"
+  name         = "cloudforge-saga-state-${var.environment}"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "transaction_id"
 
   attribute {
     name = "transaction_id"
