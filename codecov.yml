@@ -1,0 +1,8 @@
+coverage:
+  status:
+    patch: no
+ignore:
+  - "platform"
+  - "cmd"
+  - "internal/modules/*/mocks"
+  - "main.go"\n

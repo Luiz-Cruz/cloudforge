@@ -1,0 +1,54 @@
+consumes:
+    - application/json
+definitions:
+    EnvironmentRequest:
+        properties:
+            name:
+                type: string
+                x-go-name: Name
+            type:
+                type: string
+                x-go-name: Type
+        type: object
+        x-go-package: github.com/Luiz-Cruz/cloudforge/internal/modules/environment
+host: localhost:8080
+info:
+    description: CloudForge API - Enterprise Cloud Provisioning Platform
+    title: cloudforge
+    version: 0.1.0
+paths:
+    /environments:
+        post:
+            description: Asynchronously triggers a SAGA workflow to provision network, database, storage, compute, and secrets.
+            operationId: createEnvironment
+            parameters:
+                - in: body
+                  name: Body
+                  schema:
+                    $ref: '#/definitions/EnvironmentRequest'
+            responses:
+                "202":
+                    $ref: '#/responses/environmentResponse'
+            summary: Start provisioning a new cloud environment
+            tags:
+                - Environments
+produces:
+    - application/json
+responses:
+    environmentResponse:
+        description: ""
+        schema:
+            properties:
+                id:
+                    type: string
+                    x-go-name: ID
+                message:
+                    type: string
+                    x-go-name: Message
+                status:
+                    type: string
+                    x-go-name: Status
+            type: object
+schemes:
+    - http
+swagger: "2.0"
