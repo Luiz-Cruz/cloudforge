@@ -9,6 +9,7 @@ import (
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment"
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/environment/mocks"
 	"github.com/Luiz-Cruz/cloudforge/internal/modules/provisioning"
+	mock_wrapper "github.com/Luiz-Cruz/cloudforge/platform/aws/wrapper/mock"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -19,9 +20,21 @@ func TestWorker_ProcessSQS_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRepository(ctrl)
+	mockTracer := mock_wrapper.NewMockTracer(ctrl)
 
 	mockRepo.EXPECT().UpdateStatus(gomock.Any(), "tx-100", "PROCESSING").Return(nil).Times(1)
 	mockRepo.EXPECT().UpdateStatus(gomock.Any(), "tx-100", "AVAILABLE").Return(nil).Times(1)
+
+	// Tracer captures every step
+	mockTracer.EXPECT().Capture(gomock.Any(), "ProvisioningStep:StepA", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, name string, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).Times(1)
+
+	mockTracer.EXPECT().Capture(gomock.Any(), "ProvisioningStep:StepB", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, name string, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).Times(1)
 
 	executedSteps := []string{}
 	customSteps := []provisioning.ProvisioningStep{
@@ -41,7 +54,7 @@ func TestWorker_ProcessSQS_Success(t *testing.T) {
 		},
 	}
 
-	worker := provisioning.NewWorkerWithSteps(mockRepo, customSteps)
+	worker := provisioning.NewWorkerWithSteps(mockRepo, customSteps, mockTracer)
 
 	state := environment.EnvironmentState{
 		TransactionID: "tx-100",
@@ -66,7 +79,7 @@ func TestWorker_ProcessSQS_InvalidJSON(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRepository(ctrl)
-	worker := provisioning.NewWorker(mockRepo)
+	worker := provisioning.NewWorker(mockRepo, nil)
 
 	event := events.SQSEvent{
 		Records: []events.SQSMessage{
@@ -83,12 +96,29 @@ func TestWorker_ProcessSQS_StepFailureAndRollback(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockRepository(ctrl)
+	mockTracer := mock_wrapper.NewMockTracer(ctrl)
 
 	mockRepo.EXPECT().UpdateStatus(gomock.Any(), "tx-200", "PROCESSING").Return(nil).Times(1)
 	mockRepo.EXPECT().UpdateStatus(gomock.Any(), "tx-200", "FAILED").Return(nil).Times(1)
 
-	rollbackCalled := false
 	expectedErr := errors.New("provisioning step B failed")
+
+	mockTracer.EXPECT().Capture(gomock.Any(), "ProvisioningStep:Step1", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, name string, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).Times(1)
+
+	mockTracer.EXPECT().Capture(gomock.Any(), "ProvisioningStep:Step2", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, name string, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).Times(1)
+
+	mockTracer.EXPECT().Capture(gomock.Any(), "RollbackStep:Step1", gomock.Any()).
+		DoAndReturn(func(ctx context.Context, name string, fn func(context.Context) error) error {
+			return fn(ctx)
+		}).Times(1)
+
+	rollbackCalled := false
 
 	customSteps := []provisioning.ProvisioningStep{
 		{
@@ -112,7 +142,7 @@ func TestWorker_ProcessSQS_StepFailureAndRollback(t *testing.T) {
 		},
 	}
 
-	worker := provisioning.NewWorkerWithSteps(mockRepo, customSteps)
+	worker := provisioning.NewWorkerWithSteps(mockRepo, customSteps, mockTracer)
 
 	state := environment.EnvironmentState{
 		TransactionID: "tx-200",
@@ -140,7 +170,6 @@ func TestWorker_DefaultSteps(t *testing.T) {
 	state := environment.EnvironmentState{TransactionID: "tx-default"}
 	ctx := context.Background()
 
-	// Verify each default step runs and rolls back without error
 	for _, s := range steps {
 		assert.NotEmpty(t, s.Name)
 		err := s.Execute(ctx, state)

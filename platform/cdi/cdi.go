@@ -45,7 +45,7 @@ func provideEnvironmentRepository() environment.Repository {
 
 func ProvideProvisioningWorker() provisioning.Worker {
 	if provisioningWorker == nil {
-		provisioningWorker = provisioning.NewWorker(provideEnvironmentRepository())
+		provisioningWorker = provisioning.NewWorker(provideEnvironmentRepository(), ProvideTracer())
 	}
 	return provisioningWorker
 }
